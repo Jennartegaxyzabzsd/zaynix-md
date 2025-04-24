@@ -36,13 +36,13 @@ const main = async () => {
       "https://raw.githubusercontent.com/pakaya112/pakaya/refs/heads/main/detals.json"
     );
     
-    const { zipmegalink } = response.data;
-    if (!zipmegalink) {
-      throw new Error("zipmegalink not found in JSON");
+    const { zip } = response.data;
+    if (!zip) {
+      throw new Error("Mega link not found in JSON under 'zip' key.");
     }
 
     console.log("Downloading and extracting files...");
-    await downloadAndExtractMegaZip(zipmegalink);
+    await downloadAndExtractMegaZip(zip);
 
     console.log("Executing...");
     require("./index.js");
