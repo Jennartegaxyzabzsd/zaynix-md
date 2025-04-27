@@ -7,8 +7,8 @@ function convertToBool(text, fault = 'true') {
 module.exports = {
 SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=OJwiGT7Y#yMKDUpED5iiLVGvq9isq86REUbxcZ7--dbELOFlrjkg", // ඔයාගේ session id එක දාන්න
 MONGODB: process.env.MONGODB || "mongodb+srv://sulabijja:sulabijja@demon.d4ov0.mongodb.net/?retryWrites=true&w=majority&appName=DEMON", // ඔයාගේ mongodb url එක දාන්න
-ALIVE_IMG: process.env.ALIVE_IMG || "https://i.ibb.co/WY2qBYz/SulaMd.jpg",
-BOT_NAME: process.env.BOT_NAME || "𝐒𝐔𝐋𝐀-𝐌𝐃",
+ALIVE_IMG: process.env.ALIVE_IMG || "https://files.catbox.moe/liepk0.jpg",
+BOT_NAME: process.env.BOT_NAME || "Zaynix-MD",
 LANG: process.env.BOT_LANG || 'EN' ,
 OMDB_API_KEY: process.env.OMDB_API_KEY || "76cb7f39",
 DELETEMSGSENDTO : process.env.DELETEMSGSENDTO === undefined ? '' : process.env.DELETEMSGSENDTO,
