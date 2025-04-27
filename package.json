@@ -5,8 +5,8 @@
   "main": "zaynix.js",
   "scripts": {
     "start": "pm2 start zaynix.js --deep-monitoring --attach --name sulamd",
-    "stop": "pm2 stop sulamd",
-    "restart": "pm2 restart sulamd"
+    "stop": "pm2 stop Zaynix-MD",
+    "restart": "pm2 restart Zaynix-MD"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "github:AxellNetwork/Baileys",
