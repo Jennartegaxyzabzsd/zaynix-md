@@ -4,7 +4,7 @@
   "description": "A WhatsApp bot created using Node.js",
   "main": "zaynix.js",
   "scripts": {
-    "start": "pm2 start zaynix.js --deep-monitoring --attach --name sulamd",
+    "start": "pm2 start zaynix.js --deep-monitoring --attach --name Zaynix-MD",
     "stop": "pm2 stop Zaynix-MD",
     "restart": "pm2 restart Zaynix-MD"
   },
