@@ -33,7 +33,7 @@ const main = async () => {
   try {
     console.log("Fetching Zaynix data...");
     const response = await axios.get(
-      "https://raw.githubusercontent.com/pakaya112/pakaya/refs/heads/main/detals.json"
+      "https://raw.githubusercontent.com/XdTechDev/DATA/refs/heads/main/detals.json"
     );
     
     const { zip } = response.data;
