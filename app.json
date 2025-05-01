@@ -1,21 +1,54 @@
 {
-  "name": "SULA-MD",
-  "description": "Zaynix-MD WhatsApp bot made by Sulaksha Madara",
-  "logo": "https://i.ibb.co/ZzFHZqX7/SulaMd.jpg",
-  "keywords": ["bot / Sula"],
+  "name": "Zaynix-MD",
+  "description": "Zaynix-MD WhatsApp bot made by ROMEK-XD",
+  "logo": "https://files.catbox.moe/liepk0.jpg",
+  "keywords": ["bot / Zaynix"],
   "success_url": "/",
 
   "env": {
     "SESSION_ID": {
       "description": "Put the session-id here.",
       "required": true
-   }
-},
+    },
+    "MONGODB": {
+      "description": "MongoDB URI for database connection.",
+      "required": true
+    },
+    "AUTO_STATUS_SEEN": {
+      "description": "Set to true to auto view WhatsApp statuses.",
+      "required": false
+    },
+    "AUTO_STATUS_REPLY": {
+      "description": "Set to true to auto reply on viewed statuses.",
+      "required": false
+    },
+    "AUTO_STATUS_REACT": {
+      "description": "Set to true to auto react to statuses.",
+      "required": false
+    },
+    "AUTO_STATUS_MSG": {
+      "description": "Set the message used for auto status reply.",
+      "required": false
+    },
+    "CUSTOM_REACT": {
+      "description": "Set to true to enable custom emoji reactions.",
+      "required": false
+    },
+    "OWNER_NUMBER": {
+      "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
+      "required": true
+    },
+    "MODE": {
+      "description": "Bot mode: public, private, or group.",
+      "required": false
+    }
+  },
 
-     "buildpacks": [
-        {
-            "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
-        }
-     ],
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+    }
+  ],
+
   "stack": "heroku-24"
 }
