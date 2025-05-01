@@ -1,2 +1,2 @@
 ## pair code 
-zaynix-m-dpair.vercel.app
+https//zaynix-m-dpair.vercel.app
