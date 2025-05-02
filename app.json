@@ -20,11 +20,11 @@
     },
     "MODE": {
       "description": "Bot mode: public, private, or group.",
-      "required": public 
+      "required": true
     },
     "PREFIX": {
       "description": "Command prefix used to trigger the bot (e.g., . or !).",
-      "required": .
+      "required": true
     },
     "AUTO_STATUS_SEEN": {
       "description": "Set to true to auto view WhatsApp statuses.",
