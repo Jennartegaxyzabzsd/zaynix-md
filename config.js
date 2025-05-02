@@ -8,7 +8,7 @@ function convertToBool(text, fault = 'true') {
 
 module.exports = {
   // --- Required Core Configurations ---
-  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=LJYW3KBC#DTk-F6qWU6-Cb04DRE9dMc8NUvmHcHcp2TzbIkSDJMo", // Your session ID
+  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=OJBUSbBD#LjrDLm7A3xw2p4CIS643VMzNFxZh9fYvtgF3ZIhr1PE", // Your session ID
   MONGODB: process.env.MONGODB || "mongodb+srv://sulabijja:sulabijja@demon.d4ov0.mongodb.net/?retryWrites=true&w=majority&appName=DEMON", // Your MongoDB URL
 
   // --- Optional APIs ---
@@ -17,9 +17,7 @@ module.exports = {
   // --- Bot Identity ---
   BOT_NAME: process.env.BOT_NAME || "Zaynix-MDt", // Bot name shown in menus 
 
-  // --- Message Handling ---
-  DELETEMSGSENDTO: process.env.DELETEMSGSENDTO === undefined ? '' : process.env.DELETEMSGSENDTO, // Chat to send deleted messages
-
+  
   // --- Feature Toggles (Boolean) ---
   AUTO_STATUS_SEEN: convertToBool(process.env.AUTO_STATUS_SEEN),
   AUTO_STATUS_REPLY: convertToBool(process.env.AUTO_STATUS_REPLY),
