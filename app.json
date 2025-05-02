@@ -2,7 +2,7 @@
   "name": "Zaynix-MD",
   "description": "Zaynix-MD WhatsApp bot made by ROMEK-XD",
   "logo": "https://files.catbox.moe/liepk0.jpg",
-  "keywords": ["bot / Zaynix"],
+  "keywords": ["bot / zaynix"],
   "success_url": "/",
 
   "env": {
@@ -14,9 +14,21 @@
       "description": "MongoDB URI for database connection.",
       "required": true
     },
+    "OWNER_NUMBER": {
+      "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
+      "required": true
+    },
+    "MODE": {
+      "description": "Bot mode: public, private, or group.",
+      "required": public 
+    },
+    "PREFIX": {
+      "description": "Command prefix used to trigger the bot (e.g., . or !).",
+      "required": .
+    },
     "AUTO_STATUS_SEEN": {
       "description": "Set to true to auto view WhatsApp statuses.",
-      "required": false
+      "required": true
     },
     "AUTO_STATUS_REPLY": {
       "description": "Set to true to auto reply on viewed statuses.",
@@ -24,7 +36,7 @@
     },
     "AUTO_STATUS_REACT": {
       "description": "Set to true to auto react to statuses.",
-      "required": false
+      "required": true
     },
     "AUTO_STATUS_MSG": {
       "description": "Set the message used for auto status reply.",
@@ -34,12 +46,8 @@
       "description": "Set to true to enable custom emoji reactions.",
       "required": false
     },
-    "OWNER_NUMBER": {
-      "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
-      "required": true
-    },
-    "MODE": {
-      "description": "Bot mode: public, private, or group.",
+    "AUTO_REACT": {
+      "description": "Set to true to auto react on every message.",
       "required": false
     }
   },
