@@ -4,59 +4,117 @@
   "logo": "https://files.catbox.moe/liepk0.jpg",
   "keywords": ["bot / zaynix"],
   "success_url": "/",
-
   "env": {
     "SESSION_ID": {
       "description": "Put the session-id here.",
-      "required": true
+      "required": true,
+      "value": ""
     },
     "MONGODB": {
       "description": "MongoDB URI for database connection.",
-      "required": true
+      "required": true,
+      "value": ""
     },
     "OWNER_NUMBER": {
       "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
-      "required": true
+      "required": true,
+      "value": ""
     },
     "MODE": {
       "description": "Bot mode: public, private, or group.",
-      "required": true
+      "required": false,
+      "value": "public"
     },
     "PREFIX": {
       "description": "Command prefix used to trigger the bot (e.g., . or !).",
-      "required": true
+      "required": false,
+      "value": "."
     },
     "AUTO_STATUS_SEEN": {
       "description": "Set to true to auto view WhatsApp statuses.",
-      "required": true
+      "required": false,
+      "value": "false"
     },
     "AUTO_STATUS_REPLY": {
       "description": "Set to true to auto reply on viewed statuses.",
-      "required": false
+      "required": false,
+      "value": "false"
     },
     "AUTO_STATUS_REACT": {
       "description": "Set to true to auto react to statuses.",
-      "required": true
+      "required": false,
+      "value": "true"
     },
     "AUTO_STATUS_MSG": {
       "description": "Set the message used for auto status reply.",
-      "required": false
+      "required": false,
+      "value": "*HELLO...👋Zaynix-MD AUTO SEEN YOUR STATUS*"
     },
     "CUSTOM_REACT": {
       "description": "Set to true to enable custom emoji reactions.",
-      "required": false
+      "required": false,
+      "value": "false"
     },
     "AUTO_REACT": {
       "description": "Set to true to auto react on every message.",
-      "required": false
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_READ_STATUS": {
+      "description": "Set to true to automatically read WhatsApp statuses.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_VOICE": {
+      "description": "Set to true to enable automatic voice messages.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_STICKER": {
+      "description": "Set to true to enable automatic sticker generation.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_REPLY": {
+      "description": "Set to true to enable automatic replies to messages.",
+      "required": false,
+      "value": "true"
+    },
+    "ALLWAYS_OFFLINE": {
+      "description": "Set to true to make the bot appear offline always.",
+      "required": false,
+      "value": "false"
+    },
+    "READ_MESSAGE": {
+      "description": "Set to true to automatically read messages.",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_LINK": {
+      "description": "Set to true to enable anti-link protection in chats.",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_LINKK": {
+      "description": "Set to true to enable additional anti-link protection.",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_BOT": {
+      "description": "Set to true to enable anti-bot measures.",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_BAD": {
+      "description": "Set to true to filter out inappropriate content.",
+      "required": false,
+      "value": "false"
     }
   },
-
   "buildpacks": [
     {
       "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
     }
   ],
-
   "stack": "heroku-24"
 }
