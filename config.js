@@ -8,8 +8,8 @@ function convertToBool(text, fault = 'true') {
 
 module.exports = {
   // --- Required Core Configurations ---
-  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=OJBUSbBD#LjrDLm7A3xw2p4CIS643VMzNFxZh9fYvtgF3ZIhr1PE", // Your session ID
-  MONGODB: process.env.MONGODB || "mongodb+srv://sulabijja:sulabijja@demon.d4ov0.mongodb.net/?retryWrites=true&w=majority&appName=DEMON", // Your MongoDB URL
+  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=SMZnAYDC#eJoY9JmJ1i2Ry6pVAZzCpI1njU_a5aei9uEIfrtQYrc", // Your session ID
+  MONGODB: process.env.MONGODB || "mongodb+srv://oyysreejan8:r9f3q8OpBE9UdFEv@cluster0.h3mzhuz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", // Your MongoDB URL
 
   // --- Optional APIs ---
   OMDB_API_KEY: process.env.OMDB_API_KEY || "76cb7f39", // For movie/series search (OMDb API)
