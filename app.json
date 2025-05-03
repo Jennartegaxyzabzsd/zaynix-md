@@ -13,7 +13,7 @@
     "MONGODB": {
       "description": "MongoDB URI for database connection.",
       "required": true,
-      "value": ""
+      "value": "mongodb://mongo:pyABVHyEsUQmYiSXFquHuEiNvDQitgXH@switchyard.proxy.rlwy.net:20784"
     },
     "OWNER_NUMBER": {
       "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
