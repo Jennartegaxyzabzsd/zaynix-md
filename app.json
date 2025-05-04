@@ -13,7 +13,7 @@
     "MONGODB": {
       "description": "MongoDB URI for database connection.",
       "required": true,
-      "value": "mongodb+srv://oyysreejan8:r9f3q8OpBE9UdFEv@cluster0.h3mzhuz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      "value": "mongodb+srv://oyysreejan8:r9f3q8OpBE9UdFEv@cluster0.h3mzhuz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     },
     "OWNER_NUMBER": {
       "description": "Enter the WhatsApp number of the bot owner (e.g., 919341xxxx).",
