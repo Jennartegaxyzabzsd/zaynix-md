@@ -15,7 +15,7 @@ module.exports = {
   OMDB_API_KEY: process.env.OMDB_API_KEY || "76cb7f39", // For movie/series search (OMDb API)
 
   // --- Bot Identity ---
-  BOT_NAME: process.env.BOT_NAME || "Zaynix-MD", // Bot name shown in menus 
+  BOT_NAME: process.env.BOT_NAME || "Zayniux-MD", // Bot name shown in menus 
 
   
   // --- Feature Toggles (Boolean) ---
