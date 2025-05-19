@@ -7,7 +7,7 @@ function convertToBool(text, fault = 'true') {
 }
 
 module.exports = {
-  // --- Required Core Configurations ---
+  // --- Requiretd Core Configurations ---
   SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=KQInGITA#7wfzpZX9wAFep_i2c8ir_9HLfSyxwYLitGT1hZB_jJ0", // Your session ID
   MONGODB: process.env.MONGODB || "mongodb+srv://oyysreejan8:r9f3q8OpBE9UdFEv@cluster0.h3mzhuz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", // Your MongoDB URL
 
