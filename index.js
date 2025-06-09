@@ -34,19 +34,6 @@ const prefix = '.'
 
 const ownerNumber = ['919341378016', '263715831216']
 
-//===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-  if (!process.env.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-  const sessdata = process.env.SESSION_ID.split("Zaynix-MD=")[1];
-  const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-  filer.download((err, data) => {
-    if (err) throw err
-    fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
-      console.log("SESSION ID DAWNLOAD ✔️")
-    })
-  })
-}
-
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
@@ -103,29 +90,52 @@ const downloadResources = async () => {
     console.log('Downloading and extracting files...');
     await downloadAndExtractMegaZip(zip);
 
-    // Verify that lib/functions.js exists after extraction
     const functionsPath = path.join(__dirname, 'lib', 'functions.js');
     if (!fs.existsSync(functionsPath)) {
       throw new Error('lib/functions.js not found after ZIP extraction. Ensure the ZIP contains this file.');
     }
   } catch (error) {
     console.error('Error downloading resources:', error.message);
-    throw error; // Fail early if resources are critical
+    throw error;
   }
 };
 
 //============================================================
 
 async function connectToWA() {
+  // Check for SESSION_ID early
+  if (!process.env.SESSION_ID) {
+    console.log('[Zaynix-MD] Please add your session to SESSION_ID env !!');
+    process.exit(1); // Exit the process gracefully
+  }
+
+  // Download session file if needed
+  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+    const sessdata = process.env.SESSION_ID.split("Zaynix-MD=")[1];
+    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+    await new Promise((resolve, reject) => {
+      filer.download((err, data) => {
+        if (err) {
+          console.error('Failed to download session file:', err);
+          reject(err);
+        } else {
+          fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
+          console.log("SESSION ID DOWNLOADED ✔️");
+          resolve();
+        }
+      });
+    });
+  }
+
   //===========connect mongodb===================
   const connectDB = require('./lib/mongodb')
   connectDB();
   //==============================================
 
-  // Download and extract resources first
+  // Download and extract resources
   await downloadResources();
 
-  // Now load modules that depend on extracted files
+  // Load modules after resources are available
   const l = console.log
   const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
   const config = require('./config')
@@ -173,7 +183,7 @@ async function connectToWA() {
 ━━━━━━━━━━━━━━━━━━━━━━  
 *😈 ZAYNIX-MD OFFICIAL WHATSAPP BOT*  
 ━━━━━━━━━━━━━━━━━━━━━━  
-╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀𝐍𝐍𝐄𝐬𝐍𝐄𝐋〕─╮  
+╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀𝐍𝐍𝐄𝐋〕─╮  
 ┣➤ (https://whatsapp.com/channel/0029Vb0Tq5eKbYMSSePQtI34)  
 ╰──────────────────────╯  
 ━━━━━━━━━━━━━━━━━━━━━━  
