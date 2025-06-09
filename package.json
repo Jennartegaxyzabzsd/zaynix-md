@@ -2,9 +2,9 @@
   "name": "Zaynix-MD",
   "version": "1.0.0",
   "description": "A COMPLETE  WhatsApp bot created using Node.js",
-  "main": "zaynix.js",
+  "main": "index.js",
   "scripts": {
-    "start": "pm2 start zaynix.js --deep-monitoring --attach --name Zaynix-MD",
+    "start": "pm2 start index.js --deep-monitoring --attach --name Zaynix-MD",
     "stop": "pm2 stop Zaynix-MD",
     "restart": "pm2 restart Zaynix-MD"
   },
