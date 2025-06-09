@@ -38,34 +38,6 @@ const path = require('path')
 const prefix = '.'
 
 const ownerNumber = ['919341378016', '263715831216']
-
-//===================SESSION-AUTH============================
-const downloadSession = async () => {
-  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-    if (!config.SESSION_ID) {
-      console.log('Please add your session to SESSION_ID env !!');
-      process.exit(1);
-    }
-    const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
-    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
-    console.log('Downloading Session File...');
-    const data = await new Promise((resolve, reject) => {
-      filer.download((err, data) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
-    fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
-    console.log("SESSION ID DAWNLOAD ✔️");
-  } else {
-    console.log("Session file already exists, skipping download.");
-  }
-};
-
-const express = require("express");
-const app = express();
-const port = process.env.PORT || 8000;
-
 //===================NEW ZIP DOWNLOAD=================
 const downloadAndExtractMegaZip = async (megaLink) => {
   try {
@@ -135,6 +107,35 @@ const main = async () => {
     throw new Error(`Failed to download resources: ${error.message}`);
   }
 };
+
+
+
+//===================SESSION-AUTH============================
+const downloadSession = async () => {
+  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+    if (!config.SESSION_ID) {
+      console.log('Please add your session to SESSION_ID env !!');
+      process.exit(1);
+    }
+    const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
+    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+    console.log('Downloading Session File...');
+    const data = await new Promise((resolve, reject) => {
+      filer.download((err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+    fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
+    console.log("SESSION ID DAWNLOAD ✔️");
+  } else {
+    console.log("Session file already exists, skipping download.");
+  }
+};
+
+const express = require("express");
+const app = express();
+const port = process.env.PORT || 8000;
 
 
 async function connectToWA() {
