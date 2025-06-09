@@ -108,34 +108,21 @@ const main = async () => {
   }
 };
 
-
-
 //===================SESSION-AUTH============================
-const downloadSession = async () => {
-  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-    if (!config.SESSION_ID) {
-      console.log('Please add your session to SESSION_ID env !!');
-      process.exit(1);
-    }
-    const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
-    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
-    console.log('Downloading Session File...');
-    const data = await new Promise((resolve, reject) => {
-      filer.download((err, data) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
-    fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
-    console.log("SESSION ID DAWNLOAD ✔️");
-  } else {
-    console.log("Session file already exists, skipping download.");
-  }
-};
+if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
+const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
+const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
+filer.download((err, data) => {
+if(err) throw err
+fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
+console.log("SESSION ID DAWNLOAD ✔️")
+})})}
 
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
+//================================/
 
 
 async function connectToWA() {
