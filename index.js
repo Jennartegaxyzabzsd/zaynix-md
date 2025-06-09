@@ -18,14 +18,10 @@ const {
   Browsers
 } = require('@whiskeysockets/baileys')
 
-const l = console.log
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
 const fs = require('fs')
 const P = require('pino')
-const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const util = require('util')
-const { sms, downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
 const { File } = require('megajs')
 const { fromBuffer } = require('file-type')
@@ -33,15 +29,15 @@ const bodyparser = require('body-parser')
 const { tmpdir } = require('os')
 const Crypto = require('crypto')
 const path = require('path')
-const AdmZip = require('adm-zip') // Added as requested
+const AdmZip = require('adm-zip')
 const prefix = '.'
 
 const ownerNumber = ['919341378016', '263715831216']
 
 //===================SESSION-AUTH============================
 if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-  if (!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-  const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
+  if (!process.env.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
+  const sessdata = process.env.SESSION_ID.split("Zaynix-MD=")[1];
   const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
   filer.download((err, data) => {
     if (err) throw err
@@ -63,7 +59,6 @@ const downloadAndExtractMegaZip = async (megaLink) => {
     const currentDirectory = process.cwd();
     const zipFilePath = path.join(currentDirectory, 'temp.zip');
 
-    // Check if directory is writable
     if (!fs.accessSync(currentDirectory, fs.constants.W_OK)) {
       throw new Error('Current directory is not writable');
     }
@@ -77,12 +72,11 @@ const downloadAndExtractMegaZip = async (megaLink) => {
 
     fs.writeFileSync(zipFilePath, fileBuffer);
     const zip = new AdmZip(zipFilePath);
-    zip.extractAllTo(currentDirectory, true); // Overwrite existing files
+    zip.extractAllTo(currentDirectory, true);
     console.log('ZIP Extracted Successfully ✅');
   } catch (err) {
     throw new Error(`Failed to download or extract ZIP: ${err.message}`);
   } finally {
-    // Clean up temporary zip file
     const zipFilePath = path.join(process.cwd(), 'temp.zip');
     if (fs.existsSync(zipFilePath)) {
       try {
@@ -108,9 +102,15 @@ const downloadResources = async () => {
 
     console.log('Downloading and extracting files...');
     await downloadAndExtractMegaZip(zip);
+
+    // Verify that lib/functions.js exists after extraction
+    const functionsPath = path.join(__dirname, 'lib', 'functions.js');
+    if (!fs.existsSync(functionsPath)) {
+      throw new Error('lib/functions.js not found after ZIP extraction. Ensure the ZIP contains this file.');
+    }
   } catch (error) {
     console.error('Error downloading resources:', error.message);
-    // Continue bot initialization even if ZIP download fails
+    throw error; // Fail early if resources are critical
   }
 };
 
@@ -121,8 +121,18 @@ async function connectToWA() {
   const connectDB = require('./lib/mongodb')
   connectDB();
   //==============================================
+
+  // Download and extract resources first
+  await downloadResources();
+
+  // Now load modules that depend on extracted files
+  const l = console.log
+  const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('./lib/functions')
+  const config = require('./config')
+  const { sms, downloadMediaMessage } = require('./lib/msg')
   const { readEnv } = require('./lib/database')
-  const config = await readEnv();
+
+  const configData = await readEnv();
   //==============================================
 
   console.log("Connecting Zaynix-MD bot 🧬...");
@@ -138,9 +148,6 @@ async function connectToWA() {
     version
   })
 
-  // Download and extract ZIP before loading plugins
-  await downloadResources();
-
   conn.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect } = update
     if (connection === 'close') {
@@ -149,7 +156,6 @@ async function connectToWA() {
       }
     } else if (connection === 'open') {
       console.log('INSTAL Plugins⏳...')
-      const path = require('path');
       fs.readdirSync("./plugins/").forEach((plugin) => {
         if (path.extname(plugin).toLowerCase() == ".js") {
           require("./plugins/" + plugin);
@@ -167,7 +173,7 @@ async function connectToWA() {
 ━━━━━━━━━━━━━━━━━━━━━━  
 *😈 ZAYNIX-MD OFFICIAL WHATSAPP BOT*  
 ━━━━━━━━━━━━━━━━━━━━━━  
-╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀𝐍𝐍𝐄𝐋〕─╮  
+╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀𝐍𝐍𝐄𝐬𝐍𝐄𝐋〕─╮  
 ┣➤ (https://whatsapp.com/channel/0029Vb0Tq5eKbYMSSePQtI34)  
 ╰──────────────────────╯  
 ━━━━━━━━━━━━━━━━━━━━━━  
@@ -186,17 +192,17 @@ async function connectToWA() {
   conn.ev.on('creds.update', saveCreds)
 
   conn.ev.on('messages.upsert', async (mek) => {
-    if (config.ALLWAYS_OFFLINE === "true" && mek.key && mek.key.remoteJid !== 'status@broadcast') {
+    if (configData.ALLWAYS_OFFLINE === "true" && mek.key && mek.key.remoteJid !== 'status@broadcast') {
       await conn.readMessages([mek.key]);
     }
     mek = mek.messages[0]
     if (!mek.message) return
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_READ_STATUS === "true") {
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && configData.AUTO_READ_STATUS === "true") {
       await conn.readMessages([mek.key]);
     }
 
-    if (config.AUTO_REACT_STATUS === "true") {
+    if (configData.AUTO_REACT_STATUS === "true") {
       if (!mek.message) return;
       mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
       if (mek.key && mek.key.remoteJid === 'status@broadcast') {
@@ -304,96 +310,93 @@ async function connectToWA() {
       }
     }
 
-    // AUto Read Function By @Um4r719
-    conn.ev.on('messages.upsert', async (mek) => {
-      try {
-        mek = mek.messages[0];
-        if (!mek.message) return;
+    try {
+      mek = mek.messages[0];
+      if (!mek.message) return;
 
-        mek.message = (getContentType(mek.message) === 'ephemeralMessage')
-          ? mek.message.ephemeralMessage.message
-          : mek.message;
+      mek.message = (getContentType(mek.message) === 'ephemeralMessage')
+        ? mek.message.ephemeralMessage.message
+        : mek.message;
 
-        if (config.READ_MESSAGE === 'true') {
-          await conn.readMessages([mek.key]);
-          console.log(`Marked message from ${mek.key.remoteJid} as read.`);
+      if (configData.READ_MESSAGE === 'true') {
+        await conn.readMessages([mek.key]);
+        console.log(`Marked message from ${mek.key.remoteJid} as read.`);
+      }
+
+      const m = sms(conn, mek);
+      const type = getContentType(mek.message);
+      const content = JSON.stringify(mek.message);
+      const from = mek.key.remoteJid;
+      const isGroup = from.endsWith('@g.us');
+      const sender = mek.key.fromMe
+        ? conn.user.id.split(':')[0] + '@s.whatsapp.net'
+        : mek.key.participant || mek.key.remoteJid;
+
+      if (senderNumber.startsWith('212') && configData.BAD_NO_BLOCK === "true") {
+        console.log(`Blocking number +212${senderNumber.slice(3)}...`);
+        if (from.endsWith('@g.us')) {
+          await conn.groupParticipantsUpdate(from, [sender], 'remove');
+          await conn.sendMessage(from, { text: 'User with +212 number detected and removed from the group.' });
+        } else {
+          await conn.updateBlockStatus(sender, 'block');
+          console.log(`Blocked +212${senderNumber.slice(3)} successfully.`);
         }
+        return;
+      }
 
-        const m = sms(conn, mek);
-        const type = getContentType(mek.message);
-        const content = JSON.stringify(mek.message);
-        const from = mek.key.remoteJid;
-        const isGroup = from.endsWith('@g.us');
-        const sender = mek.key.fromMe
-          ? conn.user.id.split(':')[0] + '@s.whatsapp.net'
-          : mek.key.participant || mek.key.remoteJid;
-
-        if (senderNumber.startsWith('212') && config.BAD_NO_BLOCK === "true") {
-          console.log(`Blocking number +212${senderNumber.slice(3)}...`);
-          if (from.endsWith('@g.us')) {
-            await conn.groupParticipantsUpdate(from, [sender], 'remove');
-            await conn.sendMessage(from, { text: 'User with +212 number detected and removed from the group.' });
-          } else {
-            await conn.updateBlockStatus(sender, 'block');
-            console.log(`Blocked +212${senderNumber.slice(3)} successfully.`);
-          }
-          return;
-        }
-
-        if (config.ANTI_LINK == "true") {
-          if (!isOwner && isGroup && isBotAdmins) {
-            if (body.match(`chat.whatsapp.com`)) {
-              if (isMe) return await reply("Link Derect but i can't Delete link")
-              if (groupAdmins.includes(sender)) return
-              await conn.sendMessage(from, { delete: mek.key })
-            }
+      if (configData.ANTI_LINK == "true") {
+        if (!isOwner && isGroup && isBotAdmins) {
+          if (body.match(`chat.whatsapp.com`)) {
+            if (isMe) return await reply("Link Derect but i can't Delete link")
+            if (groupAdmins.includes(sender)) return
+            await conn.sendMessage(from, { delete: mek.key })
           }
         }
+      }
 
-        if (config.ANTI_LINKK == "true") {
-          if (!isOwner && isGroup && isBotAdmins) {
-            if (body.match(`chat.whatsapp.com`)) {
-              if (isMe) return await reply("Link Derect but i can't Delete link")
-              if (groupAdmins.includes(sender)) return
-              await conn.sendMessage(from, { delete: mek.key })
-              await conn.groupParticipantsUpdate(from, [sender], 'remove')
-            }
+      if (configData.ANTI_LINKK == "true") {
+        if (!isOwner && isGroup && isBotAdmins) {
+          if (body.match(`chat.whatsapp.com`)) {
+            if (isMe) return await reply("Link Derect but i can't Delete link")
+            if (groupAdmins.includes(sender)) return
+            await conn.sendMessage(from, { delete: mek.key })
+            await conn.groupParticipantsUpdate(from, [sender], 'remove')
           }
         }
+      }
 
-        const bad = await fetchJson(`https://raw.githubusercontent.com/sulaksha49/PUKA_DA_BALANNE/refs/heads/main/ai_ballo_horen_balanne/bad_word.json`)
-        if (config.ANTI_BAD == "true") {
-          if (!isAdmins && !isMe) {
-            for (any in bad) {
-              if (body.toLowerCase().includes(bad[any])) {
-                if (!body.includes('tent')) {
-                  if (!body.includes('docu')) {
-                    if (!body.includes('https')) {
-                      if (groupAdmins.includes(sender)) return
-                      if (mek.key.fromMe) return
-                      await conn.sendMessage(from, { delete: mek.key })
-                      await conn.sendMessage(from, { text: '*Bad word detected..!*' })
-                    }
+      const bad = await fetchJson(`https://raw.githubusercontent.com/sulaksha49/PUKA_DA_BALANNE/refs/heads/main/ai_ballo_horen_balanne/bad_word.json`)
+      if (configData.ANTI_BAD == "true") {
+        if (!isAdmins && !isMe) {
+          for (let any in bad) {
+            if (body.toLowerCase().includes(bad[any])) {
+              if (!body.includes('tent')) {
+                if (!body.includes('docu')) {
+                  if (!body.includes('https')) {
+                    if (groupAdmins.includes(sender)) return
+                    if (mek.key.fromMe) return
+                    await conn.sendMessage(from, { delete: mek.key })
+                    await conn.sendMessage(from, { text: '*Bad word detected..!*' })
                   }
                 }
               }
             }
           }
         }
+      }
 
-        if (config.ANTI_BOT == "true") {
-          if (isGroup && !isAdmins && !isMe && !isOwner && isBotAdmins) {
-            if (mek.id.startsWith("雜") || mek.id.startsWith("Zaynix-MD")) {
-              await conn.sendMessage(from, { text: "*Another Bot's message Detected*\n❗*Removed By Zaynix-MD* ❗\nAnti Bot System on..." })
-              await conn.sendMessage(from, { delete: mek.key })
-              await conn.groupParticipantsUpdate(from, [sender], 'remove')
-            }
+      if (configData.ANTI_BOT == "true") {
+        if (isGroup && !isAdmins && !isMe && !isOwner && isBotAdmins) {
+          if (mek.id.startsWith("BAE") || mek.id.startsWith("Zaynix-MD")) {
+            await conn.sendMessage(from, { text: "*Another Bot's message Detected*\n❗*Removed By Zaynix-MD* ❗\nAnti Bot System on..." })
+            await conn.sendMessage(from, { delete: mek.key })
+            await conn.groupParticipantsUpdate(from, [sender], 'remove')
           }
         }
-      } catch (err) {
-        console.error('Error in message handler:', err);
       }
-    });
+    } catch (err) {
+      console.error('Error in message handler:', err);
+    }
 
     switch (command) {
       case 'jid':
@@ -416,27 +419,19 @@ async function connectToWA() {
       m.react("👨‍💻")
     }
 
-    if (config.ALLWAYS_OFFLINE === "true") {
+    if (configData.ALLWAYS_OFFLINE === "true") {
       conn.sendPresenceUpdate('unavailable');
     }
 
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true") {
+    if (mek.key && mek.key.remoteJid === 'status@broadcast' && configData.AUTO_STATUS_REPLY === "true") {
       const user = mek.key.participant
-      const text = `${config.AUTO_STATUS_MSG}`
+      const text = `${configData.AUTO_STATUS_MSG}`
       await conn.sendMessage(user, { text: text, react: { text: '💜', key: mek.key } }, { quoted: mek })
     }
-//=================================AUTOREACT==========================================
-if (!isReact && senderNumber !== botNumber) {
-    if (config.AUTO_REACT === 'true') {
-        const reactions = ['😊', '👍', '😂', '💯', '🔥', '🙏', '🎉', '👏', '😎', '🤖', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '👹', '🤺','👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🏵', '🏰', '🏠', '🏡', '🏢', '🏣', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🚣', '🛥', '🚂', '🚁', '🚀', '🛸', '🛹', '🚴', '🚲', '🛺', '🚮', '🚯', '🚱', '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '👑', '👸', '🤴', '👹', '🤺', '🤻', '👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🏵', '🏰', '🏠', '🏡', '🏢', '🏠', '🏡', '🏢', '🏣', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🚣', '🛥', '🚂', '🚁', '🚀', '🛸', '🛹', '🚴', '🚲', '🛺', '🚮', '🚯', '🚱', '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '👑', '👸', '🤴', '👹', '🤺', '🤻', '👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🏵', '🏰', '🏠', '🏡', '🏢', '🏣', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🚣', '🛥', '🚂', '🚁', '🚀', '🛸', '🛹', '🚴', '🚲', '🛺', '🚮', '🚯', '🚱', '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '🙂', '😑', '🤣', '😍', '😘', '😗', '😙', '😚', '😛', '😝', '😞', '😟', '😠', '😡', '😢', '😭', '😓', '😳', '😴', '😌', '😆', '😂', '🤔', '😒', '😓', '😶', '🙄', '🐶', '🐱', '🐔', '🐷', '🐴', '🐲', '🐸', '🐳', '🐋', '🐒', '🐑', '🐕', '🐩', '🍔', '🍕', '🥤', '🍣', '🍲', '🍴', '🍽', '🍹', '🍸', '🎂', '📱', '📺', '📻', '🎤', '📚', '💻', '📸', '📷', '❤️', '💔', '❣️', '☀️', '🌙', '🌃', '🏠', '🚪', "🇺🇸", "🇬🇧", "🇨🇦", "🇦🇺", "🇯🇵", "🇫🇷", "🇪🇸", '👍', '👎', '👏', '👫', '👭', '👬', '👮', '🤝', '🙏', '👑', '🌻', '🌺', '🌸', '🌹', '🌴', "🏞️", '🌊', '🚗', '🚌', "🛣️", "🛫️", "🛬️", '🚣', '🛥', '🚂', '🚁', '🚀', "🏃‍♂️", "🏋️‍♀️", "🏊‍♂️", "🏄‍♂️", '🎾', '🏀', '🏈', '🎯', '🏆', '??', '⬆️', '⬇️', '⇒', '⇐', '↩️', '↪️', 'ℹ️', '‼️', '⁉️', '‽️', '©️', '®️', '™️', '🔴', '🔵', '🟢', '🔹', '🔺', '💯', '👑', '🤣', "🤷‍♂️", "🤷‍♀️", "🙅‍♂️", "🙅‍♀️", "🙆‍♂️", "🙆‍♀️", "🤦‍♂️", "🤦‍♀️", '🏻', '💆‍♂️', "💆‍♀️", "🕴‍♂️", "🕴‍♀️", "💇‍♂️", "💇‍♀️", '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '�', '🏯', '🏰', '🏠', '🏡', '🏢', '🏣', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🚣', '🛥', '🚂', '🚁', '🚀', '🛸', '🛹', '🚴', '🚲', '🛺', '🚮', '🚯', '🚱', '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '👑', '👑', '👸', '🤴', '👹', '🤺', '🤻', '👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🌳', '🌲', '🌾', '🌿', '🍃', '🍂', '🍃', '🌻', '💐', '🌹', '🌺', '🌸', '🌴', '🏵', '🎀', '🏆', '🏈', '🏉', '🎯', '🏀', '🏊', '🏋', '🏌', '🎲', '📚', '📖', '📜', '📝', '💭', '💬', '🗣', '💫', '🌟', '🌠', '🎉', '🎊', '👏', '💥', '🔥', '💥', '🌪', '💨', '🌫', '🌬', '🌩', '🌨', '🌧', '🌦', '🌥', '🌡', '🌪', '🌫', '🌬', '🌩', '🌨', '🌧', '🌦', '🌥', '🌡', '🌪', '🌫', '🌬', '🌩', '🌨', '🌧', '🌦', '🌥', '🌡', '🌱', '🌿', '🍃', '🍂', '🌻', '💐', '🌹', '🌺', '🌸', '🌴', '🏵', '🎀', '🏆', '🏈', '🏉', '🎯', '🏀', '🏊', '🏋', '🏌', '🎲', '📚', '📖', '📜', '📝', '💭', '💬', '🗣', '💫', '🌟', '🌠', '🎉', '🎊', '👏', '💥', '🔥', '💥', '🌪', '💨', '🌫', '🌬', '🌩', '🌨', '🌧', '🌦', '🌥', '🌡', '🌪', '🌫', '🌬', '🌩', '🌨', '🌧', '🌦', '🌥', '🌡', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '👑', '👸', '🤴', '👹', '🤺', '🤻', '👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🏵', '🏰', '🏠', '🏡', '🏢', '🏣', '🏥', '🏦', '🏧', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭', '🏮', '🏯', '🚣', '🛥', '🚂', '🚁', '🚀', '🛸', '🛹', '🚴', '🚲', '🛺', '🚮', '🚯', '🚱', '🚫', '🚽', "🕳️", '💣', '🔫', "🕷️", "🕸️", '💀', '👻', '🕺', '💃', "🕴️", '👶', '👵', '👴', '👱', '👨', '👩', '👧', '👦', '👪', '👫', '👭', '👬', '👮', "🕴️", '💼', '📊', '📈', '📉', '📊', '📝', '📚', '📰', '📱', '💻', '📻', '📺', '🎬', "📽️", '📸', '📷', "🕯️", '💡', '🔦', '🔧', '🔨', '🔩', '🔪', '🔫', '👑', '👸', '🤴', '👹', '🤺', '🤻', '👺', '🤼', '🤽', '🤾', '🤿', '🦁', '🐴', '🦊', '🐺', '🐼', '🐾', '🐿', '🦄', '🦅', '🦆', '🦇', '🦈', '🐳', '🐋', '🐟', '🐠', '🐡', '🐙', '🐚', '🐜', '🐝', '🐞', "🕷️", '🦋', '🐛', '🐌', '🐚', '🌿', '🌸', '💐', '🌹', '🌺', '🌻', '🌴', '🏵', '🏰', '🐒', '🦍', '🦧', '🐶', '🐕', '🦮', "🐕‍🦺", '🐩', '🐺', '🦊', '🦝', '🐱', '🐈', "🐈‍⬛", '🦁', '🐯', '🐅', '🐆', '🐴', '🐎', '🦄', '🦓', '🦌', '🦬', '🐮', '🐂', '🐃', '🐄', '🐷', '🐖', '🐗', '🐽', '🐏', '🐑', '🐐', '🐪', '🐫', '🦙', '🦒', '🐘', '🦣', '🦏', '🦛', '🐭', '🐁', '🐀', '🐹', '🐰', '🐇', "🐿️", '🦫', '🦔', '🦇', '🐻', "🐻‍❄️", '🐨', '🐼', '🦥', '🦦', '🦨', '🦘', '🦡', '🐾', '🦃', '🐔', '🐓', '🐣', '🐤', '🐥', '🐦', '🐧', "🕊️", '🦅', '🦆', '🦢', '🦉', '🦤', '🪶', '🦩', '🦚', '🦜', '🐸', '🐊', '🐢', '🦎', '🐍', '🐲', '🐉', '🦕', '🦖', '🐳', '🐋', '🐬', '🦭', '🐟', '🐠', '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', "😶‍🌫️", '😏', '😒', '🙄', '😬', "😮‍💨", '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', "😵‍💫", '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🙈', '🙉', '🙊', '💋', '💌', '💘', '💝', '💖', '💗', '💓', '💞', '💕', '💟', '❣️', '💔', "❤️‍🔥", "❤️‍🩹", '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💯', '💢', '💥', '💫', '💦', '💨', "🕳️", '💣', '💬', "👁️‍🗨️", "🗨️", "🗯️", '💭', '💤', '👋', '🤚', "🖐️", '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', "👁️", '👅', '👄', '👶', '🧒', '👦', '👧', '🧑', '👱', '👨', '🧔', "🧔‍♂️", "🧔‍♀️", "👨‍🦰", "👨‍🦱", "👨‍🦳", "👨‍🦲", '👩', "👩‍🦰", "🧑‍🦰", "👩‍🦱", "🧑‍🦱", "👩‍🦳", "🧑‍🦳", "👩‍🦲", "🧑‍🦲", "👱‍♀️", "👱‍♂️", '🧓', '👴', '👵', '🙍', "🙍‍♂️", "🙍‍♀️", '🙎', "🙎‍♂️", "🙎‍♀️", '🙅', "🙅‍♂️", "🙅‍♀️", '🙆', "🙆‍♂️", "🙆‍♀️", '💁', "💁‍♂️", "💁‍♀️", '🙋', "🙋‍♂️", "🙋‍♀️", '🧏', "🧏‍♂️", "🧏‍♀️", '🙇', "🙇‍♂️", "🙇‍♀️", '🤦', "🤦‍♂️", "🤦‍♀️", '🤷', "🤷‍♂️", "🤷‍♀️", "🧑‍⚕️", "👨‍⚕️", "👩‍⚕️", "🧑‍🎓", "👨‍🎓", "👩‍🎓", "🧑‍🏫", '👨‍🏫', "👩‍🏫", "🧑‍⚖️", "👨‍⚖️", "👩‍⚖️", "🧑‍🌾", "👨‍🌾", "👩‍🌾", "🧑‍🍳", "👨‍🍳", "👩‍🍳", "🧑‍🔧", "👨‍🔧", "👩‍🔧", "🧑‍🏭", "👨‍🏭", "👩‍🏭", "🧑‍💼", "👨‍💼", "👩‍💼", "🧑‍🔬", "👨‍🔬", "👩‍🔬", "🧑‍💻", "👨‍💻", "👩‍💻", "🧑‍🎤", "👨‍🎤", "👩‍🎤", "🧑‍🎨", "👨‍🎨", "👩‍🎨", "🧑‍✈️", "👨‍✈️", "👩‍✈️", "🧑‍🚀", "👨‍🚀", "👩‍🚀", "🧑‍🚒", "👨‍🚒", "👩‍🚒", '👮', "👮‍♂️", "👮‍♀️", "🕵️", "🕵️‍♂️", "🕵️‍♀️", '💂', "💂‍♂️", "💂‍♀️", '🥷', '👷', "👷‍♂️", "👷‍♀️", '🤴', '👸', '👳', "👳‍♂️", "👳‍♀️", '👲', '🧕', '🤵', "🤵‍♂️", "🤵‍♀️", '👰', "👰‍♂️", "👰‍♀️", '🤰', '🤱', "👩‍🍼", "👨‍🍼", "🧑‍🍼", '👼', '🎅', '🤶', "🧑‍🎄", '🦸', "🦸‍♂️", "🦸‍♀️", '🦹', "🦹‍♂️", "🦹‍♀️", '🧙', "🧙‍♂️", "🧙‍♀️", '🧚', "🧚‍♂️", "🧚‍♀️", '🧛', "🧛‍♂️", "🧛‍♀️", '🧜', "🧜‍♂️", "🧜‍♀️", '🧝', "🧝‍♂️", "🧝‍♀️", '🧞', "🧞‍♂️", "🧞‍♀️", '🧟', "🧟‍♂️", "🧟‍♀️", '💆', "💆‍♂️", "💆‍♀️", '💇', "💇‍♂️", "💇‍♀️", '🚶', "🚶‍♂️", "🚶‍♀️", '🧍', "🧍‍♂️", "🧍‍♀️", '🧎', "🧎‍♂️", "🧎‍♀️", "🧑‍🦯", "👨‍🦯", "👩‍🦯", "🧑‍🦼", "👨‍🦼", "👩‍🦼", "🧑‍🦽", "👨‍🦽", "👩‍🦽", '🏃', "🏃‍♂️", "🏃‍♀️", '💃', '🕺', "🕴️", '👯', "👯‍♂️", "👯‍♀️", '🧖', "🧖‍♂️", "🧖‍♀️", '🧗', "🧗‍♂️", "🧗‍♀️", '🤺', '🏇', '⛷️', '🏂', "🏌️", "🏌️‍♂️", "🏌️‍♀️", '🏄', "🏄‍♂️", "🏄‍♀️", '🚣', "🚣‍♂️", "🚣‍♀️", '🏊', "🏊‍♂️", "🏊‍♀️", '⛹️', "⛹️‍♂️", "⛹️‍♀️", "🏋️", "🏋️‍♂️", "🏋️‍♀️", '🚴', "🚴‍♂️", '🚴‍♀️', '🚵', "🚵‍♂️", "🚵‍♀️", '🤸', "🤸‍♂️", "🤸‍♀️", '🤼', "🤼‍♂️", "🤼‍♀️", '🤽', "🤽‍♂️", "🤽‍♀️", '🤾', "🤾‍♂️", "🤾‍♀️", '🤹', "🤹‍♂️", "🤹‍♀️", '🧘', "🧘‍♂️", "🧘‍♀️", '🛀', '🛌', "🧑‍🤝‍🧑", '👭', '👫', '👬', '💏', "👩‍❤️‍💋‍👨", "👨‍❤️‍💋‍👨", "👩‍❤️‍💋‍👩", '💑', "👩‍❤️‍👨", "👨‍❤️‍👨", "👩‍❤️‍👩", '👪', "👨‍👩‍👦", "👨‍👩‍👧", "👨‍👩‍👧‍👦", "👨‍👩‍👦‍👦", "👨‍👩‍👧‍👧", "👨‍👨‍👦", '👨‍👨‍👧', "👨‍👨‍👧‍👦", "👨‍👨‍👦‍👦", "👨‍👨‍👧‍👧", "👩‍👩‍👦", "👩‍👩‍👧", "👩‍👩‍👧‍👦", "👩‍👩‍👦‍👦", "👩‍👩‍👧‍👧", "👨‍👦", "👨‍👦‍👦", "👨‍👧", "👨‍👧‍👦", "👨‍👧‍👧", "👩‍👦", "👩‍👦‍👦", "👩‍👧", "👩‍👧‍👦", "👩‍👧‍👧", "🗣️", '👤', '👥', '🫂', '👣', '🦰', '🦱', '🦳', '🦲', '🐵'];
 
-        const randomReaction = reactions[Math.floor(Math.random() * reactions.length)]; // 
-        m.react(randomReaction);
-    }
-}
-    if (!isOwner && config.MODE === "private") return
-    if (!isOwner && isGroup && config.MODE === "inbox") return
-    if (!isOwner && isGroup && config.MODE === "groups") return
+    if (!isOwner && configData.MODE === "private") return
+    if (!isOwner && isGroup && configData.MODE === "inbox") return
+    if (!isOwner && isGroup && configData.MODE === "groups") return
 
     const events = require('./command')
     const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
@@ -453,19 +448,19 @@ if (!isReact && senderNumber !== botNumber) {
     }
     events.commands.map(async (command) => {
       if (body && command.on === "body") {
-        command.function(conn, mek, m, { from, Quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+        command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
       } else if (mek.q && command.on === "text") {
-        command.function(conn, mek, m, { from, Quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+        command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
       } else if (
         (command.on === "image" || command.on === "photo") &&
         mek.type === "imageMessage"
       ) {
-        command.function(conn, mek, m, { from, Quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+        command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
       } else if (
         command.on === "sticker" &&
         mek.type === "stickerMessage"
       ) {
-        command.function(conn, mek, m, { from, Quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
+        command.function(conn, mek, m, { from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply })
       }
     });
   })
