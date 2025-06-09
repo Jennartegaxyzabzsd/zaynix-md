@@ -68,14 +68,14 @@ const downloadAndExtractMegaZip = async (megaLink) => {
       throw new Error('Current directory is not writable');
     }
 
-    // Log file metadata to debug
+    // Check if Mega file is accessible
     const fileInfo = await new Promise((resolve, reject) => {
       megaFile.loadAttributes((err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     });
-    console.log('Mega File Info:', fileInfo);
+    console.log('Mega File Info:', fileInfo); // Log file details
 
     const fileBuffer = await new Promise((resolve, reject) => {
       megaFile.download((error, data) => {
@@ -90,7 +90,7 @@ const downloadAndExtractMegaZip = async (megaLink) => {
     console.log('ZIP Extracted Successfully ✅');
   } catch (err) {
     console.error('Failed to download or extract ZIP:', err.message);
-    throw err; // Re-throw the error to stop execution
+    throw new Error(`Mega ZIP download failed: ${err.message}`); // Stop execution with clear error
   } finally {
     const zipFilePath = path.join(process.cwd(), 'temp.zip');
     if (fs.existsSync(zipFilePath)) {
@@ -108,10 +108,10 @@ const downloadResources = async () => {
     console.log('Fetching PRECIOUS data...');
     const response = await axios.get(
       'https://raw.githubusercontent.com/Jennartegaxyzabzsd/DATA/refs/heads/main/xd.json',
-      { timeout: 10000 } // Add timeout to avoid hanging
+      { timeout: 10000 }
     );
 
-    console.log('GitHub Response:', response.data); // Log the response to debug
+    console.log('GitHub Response:', response.data); // Log the JSON response
     const { zip } = response.data;
     if (!zip || typeof zip !== 'string' || !zip.startsWith('https://mega.nz/')) {
       throw new Error('Invalid or missing Mega link in JSON under "zip" key.');
@@ -121,7 +121,7 @@ const downloadResources = async () => {
     await downloadAndExtractMegaZip(zip);
   } catch (error) {
     console.error('Error downloading resources:', error.message);
-    throw error; // Stop execution if ZIP download fails
+    throw new Error(`Failed to download resources: ${error.message}`); // Stop execution
   }
 };
 
@@ -178,7 +178,7 @@ async function connectToWA() {
 ━━━━━━━━━━━━━━━━━━━━━━  
 *😈 ZAYNIX-MD OFFICIAL WHATSAPP BOT*  
 ━━━━━━━━━━━━━━━━━━━━━━  
-╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀�	N𝐍𝐄𝐋〕─╮  
+╭─〔🌐 𝐎𝐅𝐅𝐈𝐂𝐈𝐀𝐋 𝐂𝐇𝐀𝐍𝐍𝐄𝐋〕─╮  
 ┣➤ (https://whatsapp.com/channel/0029Vb0Tq5eKbYMSSePQtI34)  
 ╰──────────────────────╯  
 ━━━━━━━━━━━━━━━━━━━━━━  
