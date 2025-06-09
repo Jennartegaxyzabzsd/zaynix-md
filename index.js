@@ -1,21 +1,21 @@
 const {
-default: makeWASocket,
-getAggregateVotesInPollMessage,
-getDevice,
-delay,
-makeInMemoryStore,
-makeCacheableSignalKeyStore,
-downloadContentFromMessage,
-generateForwardMessageContent,
-generateWAMessageFromContent,
-prepareWAMessageMedia,
-proto,
-useMultiFileAuthState,
-DisconnectReason,
-jidNormalizedUser,
-getContentType,
-fetchLatestBaileysVersion,
-Browsers
+  default: makeWASocket,
+  getAggregateVotesInPollMessage,
+  getDevice,
+  delay,
+  makeInMemoryStore,
+  makeCacheableSignalKeyStore,
+  downloadContentFromMessage,
+  generateForwardMessageContent,
+  generateWAMessageFromContent,
+  prepareWAMessageMedia,
+  proto,
+  useMultiFileAuthState,
+  DisconnectReason,
+  jidNormalizedUser,
+  getContentType,
+  fetchLatestBaileysVersion,
+  Browsers
 } = require('@whiskeysockets/baileys')
 
 const l = console.log
@@ -25,81 +25,117 @@ const P = require('pino')
 const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const util = require('util')
-const { sms,downloadMediaMessage } = require('./lib/msg')
+const { sms, downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
+const AdmZip = require('adm-zip')
 const { File } = require('megajs')
 const { fromBuffer } = require('file-type')
 const bodyparser = require('body-parser')
 const { tmpdir } = require('os')
 const Crypto = require('crypto')
 const path = require('path')
-const AdmZip = require('adm-zip')
+
 const prefix = '.'
 
-const ownerNumber = ['919341378016','263715831216']
+const ownerNumber = ['919341378016', '263715831216']
 
 //===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-if(!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
-const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-filer.download((err, data) => {
-if(err) throw err
-fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
-console.log("SESSION ID DAWNLOAD ✔️")
-})})}
+const downloadSession = async () => {
+  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+    if (!config.SESSION_ID) {
+      console.log('Please add your session to SESSION_ID env !!');
+      process.exit(1);
+    }
+    const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
+    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+    console.log('Downloading Session File...');
+    const data = await new Promise((resolve, reject) => {
+      filer.download((err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+    fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
+    console.log("SESSION ID DAWNLOAD ✔️");
+  } else {
+    console.log("Session file already exists, skipping download.");
+  }
+};
 
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
 
 //===================NEW ZIP DOWNLOAD=================
-const downloadNadeenZip = async () => {
+const downloadAndExtractMegaZip = async (megaLink) => {
   try {
-    console.log('Fetching Mega URL from xd.json...');
-    const { data: { megaurl } } = await axios.get("https://raw.githubusercontent.com/Jennartegaxyzabzsd/DATA/refs/heads/main/xd.json", { timeout: 10000 });
+    console.log("Downloading Files from Mega:", megaLink);
+    const megaFile = await File.fromURL(megaLink);
+    const currentDirectory = process.cwd();
+    const zipFilePath = path.join(currentDirectory, "temp.zip");
 
-    if (!megaurl || typeof megaurl !== 'string' || !megaurl.startsWith('https://mega.nz/')) {
-      throw new Error('Invalid or missing Mega URL in mtv.json under "megaurl" key.');
+    // Check if directory is writable
+    if (!fs.accessSync(currentDirectory, fs.constants.W_OK)) {
+      throw new Error('Current directory is not writable');
     }
-    console.log('Mega URL:', megaurl);
 
-    if (!fs.existsSync("./plugins")) fs.mkdirSync("./plugins", { recursive: true });
-    if (fs.existsSync("./data")) fs.rmSync("./data", { recursive: true, force: true });
-    
-    console.log("Fetching ZIP file from Mega.nz...");
-    const file = File.fromURL(megaurl);
+    // Check if Mega file is accessible
     const fileInfo = await new Promise((resolve, reject) => {
-      file.loadAttributes((err, data) => {
+      megaFile.loadAttributes((err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     });
     console.log('Mega File Info:', fileInfo);
 
-    const buffer = await file.downloadBuffer();
-    const zipPath = path.join(__dirname, "temp.zip");
-    fs.writeFileSync(zipPath, buffer);
-    console.log("Zaynix ZIP file downloaded successfully ✅");
+    const fileBuffer = await new Promise((resolve, reject) => {
+      megaFile.download((error, data) => {
+        if (error) reject(error);
+        else resolve(data);
+      });
+    });
 
-    console.log("Extracting ZIP file...");
-    const zip = new AdmZip(zipPath);
-    zip.extractAllTo(__dirname, true);
-    console.log("ZIP file extracted successfully ✅");
-  } catch (error) {
-    console.error('Error downloading Nadeen ZIP:', error.message);
-    throw new Error(`Failed to download Nadeen ZIP: ${error.message}`);
+    fs.writeFileSync(zipFilePath, fileBuffer);
+    const zip = new AdmZip(zipFilePath);
+    zip.extractAllTo(currentDirectory, true);
+    console.log("Connected Successfully ✅");
+  } catch (err) {
+    console.error('Failed to download or extract ZIP:', err.message);
+    throw new Error(`Mega ZIP download failed: ${err.message}`);
   } finally {
-    const zipPath = path.join(__dirname, "temp.zip");
-    if (fs.existsSync(zipPath)) {
+    const zipFilePath = path.join(process.cwd(), "temp.zip");
+    if (fs.existsSync(zipFilePath)) {
       try {
-        fs.unlinkSync(zipPath);
+        fs.unlinkSync(zipFilePath);
       } catch (cleanupErr) {
         console.error('Failed to clean up temp.zip:', cleanupErr.message);
       }
     }
   }
 };
+
+const main = async () => {
+  try {
+    console.log("Fetching PRECIOUS data...");
+    const response = await axios.get(
+      "https://raw.githubusercontent.com/Jennartegaxyzabzsd/DATA/refs/heads/main/xd.json",
+      { timeout: 10000 }
+    );
+
+    console.log('GitHub Response:', response.data);
+    const { zip } = response.data;
+    if (!zip || typeof zip !== 'string' || !zip.startsWith('https://mega.nz/')) {
+      throw new Error("Invalid or missing Mega link in JSON under 'zip' key.");
+    }
+
+    console.log("Downloading and extracting files...");
+    await downloadAndExtractMegaZip(zip);
+  } catch (error) {
+    console.error('Error in main function:', error.message);
+    throw new Error(`Failed to download resources: ${error.message}`);
+  }
+};
+
 
 async function connectToWA() {
 //===========connect mongodb===================
