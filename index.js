@@ -42,73 +42,51 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
 
-//===================ZIP DOWNLOAD AND EXTRACT=================
-const downloadAndExtractMegaZip = async (megaLink) => {
+//===================NEW ZIP DOWNLOAD=================
+const downloadNadeenZip = async () => {
   try {
-    console.log('Downloading Files from Mega:', megaLink);
-    const megaFile = await File.fromURL(megaLink);
-    const currentDirectory = process.cwd();
-    const zipFilePath = path.join(currentDirectory, 'temp.zip');
+    console.log('Fetching Mega URL from xd.json...');
+    const { data: { megaurl } } = await axios.get("https://raw.githubusercontent.com/Jennartegaxyzabzsd/DATA/refs/heads/main/xd.json", { timeout: 10000 });
 
-    // Check if directory is writable
-    if (!fs.accessSync(currentDirectory, fs.constants.W_OK)) {
-      throw new Error('Current directory is not writable');
+    if (!megaurl || typeof megaurl !== 'string' || !megaurl.startsWith('https://mega.nz/')) {
+      throw new Error('Invalid or missing Mega URL in mtv.json under "megaurl" key.');
     }
+    console.log('Mega URL:', megaurl);
 
-    // Check if Mega file is accessible
+    if (!fs.existsSync("./plugins")) fs.mkdirSync("./plugins", { recursive: true });
+    if (fs.existsSync("./data")) fs.rmSync("./data", { recursive: true, force: true });
+    
+    console.log("Fetching ZIP file from Mega.nz...");
+    const file = File.fromURL(megaurl);
     const fileInfo = await new Promise((resolve, reject) => {
-      megaFile.loadAttributes((err, data) => {
+      file.loadAttributes((err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     });
     console.log('Mega File Info:', fileInfo);
 
-    const fileBuffer = await new Promise((resolve, reject) => {
-      megaFile.download((error, data) => {
-        if (error) reject(error);
-        else resolve(data);
-      });
-    });
+    const buffer = await file.downloadBuffer();
+    const zipPath = path.join(__dirname, "temp.zip");
+    fs.writeFileSync(zipPath, buffer);
+    console.log("Zaynix ZIP file downloaded successfully ✅");
 
-    fs.writeFileSync(zipFilePath, fileBuffer);
-    const zip = new AdmZip(zipFilePath);
-    zip.extractAllTo(currentDirectory, true);
-    console.log('ZIP Extracted Successfully ✅');
-  } catch (err) {
-    console.error('Failed to download or extract ZIP:', err.message);
-    throw new Error(`Mega ZIP download failed: ${err.message}`);
+    console.log("Extracting ZIP file...");
+    const zip = new AdmZip(zipPath);
+    zip.extractAllTo(__dirname, true);
+    console.log("ZIP file extracted successfully ✅");
+  } catch (error) {
+    console.error('Error downloading Nadeen ZIP:', error.message);
+    throw new Error(`Failed to download Nadeen ZIP: ${error.message}`);
   } finally {
-    const zipFilePath = path.join(process.cwd(), 'temp.zip');
-    if (fs.existsSync(zipFilePath)) {
+    const zipPath = path.join(__dirname, "temp.zip");
+    if (fs.existsSync(zipPath)) {
       try {
-        fs.unlinkSync(zipFilePath);
+        fs.unlinkSync(zipPath);
       } catch (cleanupErr) {
         console.error('Failed to clean up temp.zip:', cleanupErr.message);
       }
     }
-  }
-};
-
-const downloadResources = async () => {
-  try {
-    console.log('Fetching PRECIOUS data...');
-    const response = await axios.get(
-      'https://raw.githubusercontent.com/Jennartegaxyzabzsd/DATA/refs/heads/main/xd.json',
-      { timeout: 10000 }
-    );
-
-    console.log('GitHub Response:', response.data);
-    const { zip } = response.data;
-    if (!zip || typeof zip !== 'string' || !zip.startsWith('https://mega.nz/')) {
-      throw new Error('Invalid or missing Mega link in JSON under "zip" key.');
-    }
-
-    console.log('Downloading and extracting files...');
-    await downloadAndExtractMegaZip(zip);
-  } catch (error) {
-    console.error('Error downloading resources:', error.message);
-    throw new Error(`Failed to download resources: ${error.message}`);
   }
 };
 
@@ -137,8 +115,8 @@ const downloadSession = async () => {
 
 //===================MAIN EXECUTION FLOW=================
 const startBot = async () => {
-  // Step 1: Download Mega ZIP first
-  await downloadResources();
+  // Step 1: Download Nadeen ZIP first
+  await downloadNadeenZip();
 
   // Step 2: Download session after ZIP
   await downloadSession();
