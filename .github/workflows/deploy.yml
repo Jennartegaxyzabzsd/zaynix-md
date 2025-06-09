@@ -1,0 +1,20 @@
+name: Deploy Zaynix-MD
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Load environment variables
+        run: echo "SESSION_ID=$(cat session.env | grep SESSION_ID | cut -d'=' -f2-)" >> $GITHUB_ENV
+      - name: Start application
+        run: npm start
