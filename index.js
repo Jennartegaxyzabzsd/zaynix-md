@@ -106,7 +106,8 @@ async function connectToWA() {
   // Check for SESSION_ID early
   if (!process.env.SESSION_ID) {
     console.log('[Zaynix-MD] Please add your session to SESSION_ID env !!');
-    process.exit(1); // Exit the process gracefully
+    // Instead of process.exit, throw an error to stop PM2 from restarting
+    throw new Error('Missing SESSION_ID environment variable');
   }
 
   // Download session file if needed
@@ -480,6 +481,10 @@ async function connectToWA() {
   });
   app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
   setTimeout(() => {
-    connectToWA()
+    connectToWA().catch(err => {
+      console.error('Failed to start Zaynix-MD:', err.message);
+      // Exit without triggering PM2 restart
+      process.exit(1);
+    });
   }, 4000);
 }
