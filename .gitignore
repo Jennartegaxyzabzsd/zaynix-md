@@ -1,0 +1,32 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment variables and sensitive data
+.env
+session.env
+auth_info_baileys/
+
+# Temporary files
+temp.zip
+*.tmp
+*.log
+
+# Build and distribution directories
+dist/
+build/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# PM2 logs and process files
+pm2.log
+pm2.pid
+~/.pm2/
+
+# Other common ignores
+*.md
+coverage/
