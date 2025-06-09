@@ -52,8 +52,8 @@ console.log("SESSION ID DAWNLOAD ✔️")
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
-//================================/
-===================NEW ZIP DOWNLOAD=================
+
+//===================NEW ZIP DOWNLOAD=================
 const downloadNadeenZip = async () => {
   try {
     console.log('Fetching Mega URL from xd.json...');
