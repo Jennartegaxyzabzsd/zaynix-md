@@ -38,19 +38,6 @@ const prefix = '.'
 
 const ownerNumber = ['919341378016', '263715831216']
 
-//===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
-  if (!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!')
-  const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
-  const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
-  filer.download((err, data) => {
-    if (err) throw err
-    fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
-      console.log("SESSION ID DAWNLOAD ✔️")
-    })
-  })
-}
-
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8000;
@@ -75,7 +62,7 @@ const downloadAndExtractMegaZip = async (megaLink) => {
         else resolve(data);
       });
     });
-    console.log('Mega File Info:', fileInfo); // Log file details
+    console.log('Mega File Info:', fileInfo);
 
     const fileBuffer = await new Promise((resolve, reject) => {
       megaFile.download((error, data) => {
@@ -90,7 +77,7 @@ const downloadAndExtractMegaZip = async (megaLink) => {
     console.log('ZIP Extracted Successfully ✅');
   } catch (err) {
     console.error('Failed to download or extract ZIP:', err.message);
-    throw new Error(`Mega ZIP download failed: ${err.message}`); // Stop execution with clear error
+    throw new Error(`Mega ZIP download failed: ${err.message}`);
   } finally {
     const zipFilePath = path.join(process.cwd(), 'temp.zip');
     if (fs.existsSync(zipFilePath)) {
@@ -111,7 +98,7 @@ const downloadResources = async () => {
       { timeout: 10000 }
     );
 
-    console.log('GitHub Response:', response.data); // Log the JSON response
+    console.log('GitHub Response:', response.data);
     const { zip } = response.data;
     if (!zip || typeof zip !== 'string' || !zip.startsWith('https://mega.nz/')) {
       throw new Error('Invalid or missing Mega link in JSON under "zip" key.');
@@ -121,8 +108,43 @@ const downloadResources = async () => {
     await downloadAndExtractMegaZip(zip);
   } catch (error) {
     console.error('Error downloading resources:', error.message);
-    throw new Error(`Failed to download resources: ${error.message}`); // Stop execution
+    throw new Error(`Failed to download resources: ${error.message}`);
   }
+};
+
+//===================SESSION-AUTH============================
+const downloadSession = async () => {
+  if (!fs.existsSync(__dirname + '/auth_info_baileys/creds.json')) {
+    if (!config.SESSION_ID) {
+      console.log('Please add your session to SESSION_ID env !!');
+      process.exit(1);
+    }
+    const sessdata = config.SESSION_ID.split("Zaynix-MD=")[1];
+    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+    console.log('Downloading Session File...');
+    const data = await new Promise((resolve, reject) => {
+      filer.download((err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+    fs.writeFileSync(__dirname + '/auth_info_baileys/creds.json', data);
+    console.log("SESSION ID DAWNLOAD ✔️");
+  } else {
+    console.log("Session file already exists, skipping download.");
+  }
+};
+
+//===================MAIN EXECUTION FLOW=================
+const startBot = async () => {
+  // Step 1: Download Mega ZIP first
+  await downloadResources();
+
+  // Step 2: Download session after ZIP
+  await downloadSession();
+
+  // Step 3: Proceed with the rest of the bot
+  await connectToWA();
 };
 
 //============================================================
@@ -148,9 +170,6 @@ async function connectToWA() {
     auth: state,
     version
   })
-
-  // Download and extract ZIP before loading plugins
-  await downloadResources();
 
   conn.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect } = update
@@ -477,6 +496,9 @@ async function connectToWA() {
   });
   app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
   setTimeout(() => {
-    connectToWA()
+    startBot().catch(err => {
+      console.error('Failed to start bot:', err.message);
+      process.exit(1);
+    });
   }, 4000);
 }
