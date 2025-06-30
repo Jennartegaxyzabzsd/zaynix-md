@@ -8,7 +8,7 @@ function convertToBool(text, fault = 'true') {
 
 module.exports = {
   // --- Requiretd Core Configurations ---
-  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=aIAEGJaB#JtO6RJWHBXdKngjEvtdDrI_0T6-E7smMpNZdqFQusus", // Your session ID
+  SESSION_ID: process.env.SESSION_ID || "Zaynix-MD=jZhQxRRT#zrZfTghTjsdcB6_rS7GGJWJpSM7JQnPJ01yw6gkqKrQ", // Your session ID
   MONGODB: process.env.MONGODB || "mongodb+srv://oyysreejan8:r9f3q8OpBE9UdFEv@cluster0.h3mzhuz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", // Your MongoDB URL
 
   // --- Optional APIs ---
